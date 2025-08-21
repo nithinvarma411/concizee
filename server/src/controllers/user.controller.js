@@ -22,11 +22,9 @@ passport.use(new GoogleStrategy({
 
         const newUser = new User({
             email: profile.emails[0].value,
-            googleID: profile.id
         });
 
         await newUser.save();
-        newUser.isNewUser = true;  // Mark new user
         return done(null, newUser);
     } catch (error) {
         return done(error, null);
@@ -56,7 +54,7 @@ const googleAuthSuccess = (req, res) => {
     res.cookie('token', token, {
         httpOnly: process.env.NODE_ENV === 'production',
         secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
@@ -71,31 +69,73 @@ const toggleMode = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        const mode = await User.findById(userId).select("mode");
+        // fetch user doc with only mode field
+        const user = await User.findById(userId).select("mode");
+        if (!user) {
+            return res.status(404).send({ message: "User not found" });
+        }
 
         let updatedMode;
-
-        if (mode == "dark") {
-            updatedMode = await User.findByIdAndUpdate(userId, {mode: "light"}, {new: true});
+        if (user.mode === "dark") {
+            updatedMode = await User.findByIdAndUpdate(
+                userId,
+                { mode: "light" },
+                { new: true }
+            );
         } else {
-            updatedMode = await User.findByIdAndUpdate(userId, {mode: "dark"}, {new: true});
+            updatedMode = await User.findByIdAndUpdate(
+                userId,
+                { mode: "dark" },
+                { new: true }
+            );
         }
 
         if (!updatedMode) {
-            res.status(404).send({message: "Updated Mode not found"});
+            return res.status(404).send({ message: "Updated Mode not found" });
         }
 
-        res.status(200).send({mode: updatedMode});
+        // send back just the string value, not the whole doc
+        res.status(200).send({ mode: updatedMode.mode });
 
     } catch (error) {
         console.log("error toggling mode", error);
-        return res.status(500).send({message: "Internal Server Error"});
+        return res.status(500).send({ message: "Internal Server Error" });
+    }
+};
+
+const getMode = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        const user = await User.findById(userId).select("mode");
+        if (!user) {
+            return res.status(404).send({ message: "User not found" });
+        }
+
+        return res.status(200).send({ mode: user.mode });
+
+    } catch (error) {
+        console.log("error retrieving mode", error);
+        return res.status(500).send({ message: "Internal Server Error" });
+    }
+};
+
+const checkAuth = (req, res) => {
+    try {
+        if (req.user) {
+            return res.json({ authenticated: true });
+        }
+        return res.json({ authenticated: false });
+    } catch (error) {
+        console.log("Error authenticating user", error);
+        return res.status(500).send({ message: "Internal Server Error" });
     }
 }
+
 
 const logout = (req, res) => {
     res.clearCookie('token');
     res.status(200).json({ message: "Logged out successfully" });
 };
 
-export { googleAuth, googleAuthCallback, googleAuthSuccess, logout, toggleMode };
+export { googleAuth, googleAuthCallback, googleAuthSuccess, logout, toggleMode, getMode, checkAuth };
