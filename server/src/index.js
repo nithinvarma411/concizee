@@ -17,7 +17,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: false, // true if using HTTPS
+      secure: process.env.NODE_ENV = "production",
       maxAge: 1000 * 60 * 60 * 24 // 1 day
     }
   })
@@ -36,7 +36,7 @@ app.get("/", (req, res) => {
     res.send("Hello from server");
 });
 
-import { googleAuth, googleAuthCallback, googleAuthSuccess, logout, toggleMode } from "./controllers/user.controller.js";
+import { googleAuth, googleAuthCallback, googleAuthSuccess, logout, toggleMode, getMode , checkAuth} from "./controllers/user.controller.js";
 import chatRoute from "./routes/chat.routes.js"
 import authMiddleware from "./middleware/auth.middleware.js";
 
@@ -44,6 +44,8 @@ app.get("/auth/google", googleAuth);
 app.get("/auth/google/callback", googleAuthCallback, googleAuthSuccess);
 app.post("/logout", logout);
 app.patch("/toggle-mode", authMiddleware, toggleMode);
+app.get("/check-auth", authMiddleware, checkAuth);
+app.get("/get-mode", authMiddleware, getMode);
 
 app.use("/api/v1", chatRoute);
 
