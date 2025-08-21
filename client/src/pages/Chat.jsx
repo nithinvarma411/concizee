@@ -191,7 +191,7 @@ const Chat = () => {
     const fetchMode = async () => {
       try {
         const res = await axios.get(
-          `${import.meta.env.VITE_SERVER_URL}api/v1/get-mode`,
+          `${import.meta.env.VITE_SERVER_URL}get-mode`,
           { withCredentials: true }
         );
         setIsDarkMode(res.data.mode === "dark");

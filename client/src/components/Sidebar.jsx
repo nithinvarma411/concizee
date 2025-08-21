@@ -16,13 +16,19 @@ const Sidebar = () => {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newTitle, setNewTitle] = useState("");
 
-  const checkAuth = () => {
-    const cookies = document.cookie.split(";").map((c) => c.trim());
-    const tokenCookie = cookies.find((c) => c.startsWith("token="));
-
-    if (tokenCookie) {
-      setIsAuthenticated(true);
-    } else {
+  const checkAuth = async () => {
+    try {
+      const res = await axios.get(
+        `${import.meta.env.VITE_SERVER_URL}check-auth`,
+        { withCredentials: true }
+      );
+      if (res.data.authenticated) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+        setTitles([]);
+      }
+    } catch (error) {
       setIsAuthenticated(false);
       setTitles([]);
     }
@@ -75,7 +81,7 @@ const Sidebar = () => {
     const fetchMode = async () => {
       try {
         const res = await axios.get(
-          `${import.meta.env.VITE_SERVER_URL}api/v1/get-mode`,
+          `${import.meta.env.VITE_SERVER_URL}get-mode`,
           { withCredentials: true }
         );
         setIsDarkMode(res.data.mode === "dark");
@@ -152,18 +158,15 @@ const Sidebar = () => {
         />
       )}
 
-      {/* Sidebar */}
       <div
         className={`
-          fixed lg:relative top-0 left-0 h-screen flex flex-col z-40 transition-transform duration-300 ease-in-out
-          ${
-            isMobileMenuOpen
-              ? "translate-x-0"
-              : "-translate-x-full lg:translate-x-0"
-          }
-          w-64 sm:w-72 md:w-80 lg:w-64 xl:w-72
-          ${isDarkMode ? "bg-gray-900" : "bg-gray-100"}
-        `}
+    fixed lg:relative top-0 left-0 h-screen flex flex-col z-40 transition-transform duration-300 ease-in-out
+    ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+    w-64 sm:w-72 md:w-80 lg:w-64 xl:w-72
+    border-r
+    ${isDarkMode ? "border-white" : "border-gray-900"}
+    ${isDarkMode ? "bg-gray-900" : "bg-gray-100"}
+  `}
       >
         {isAuthenticated ? (
           <>
